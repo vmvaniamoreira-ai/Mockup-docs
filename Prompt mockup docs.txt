@@ -1,0 +1,38 @@
+# objetivo
+Criação de uma página moderna e profissional para apresentar registros de uma camada de middleware de pré-lançamento e controle de documentos antes do lançamento no ERP SAP. 
+Essa página será utilizada como mockup de um projeto maior, que terá acesso a base de dados. Nesse mockup iremos apenas inserir dados fixos, para dar ideia ao usuário de como ficará depois de pronto o projeto completo. 
+
+# contexto e detalhes
+	a) Os registros devem ser apresentados em um grid contendo dados como:
+		® Data do lançamento
+		® Tipo de documento
+		® Nome do fornecedor/ prestador de serviço
+		® Valor do documento
+		® Status  (pendente, aprovado, reprovado)
+		® Responsável por aprovação (preenchido quando aprovado)
+		® Data do envio para aprovação
+		® Data da aprovação  (preenchido quando aprovado)
+		® Observações (texto opcional)
+
+	b) Apresentar recurso de filtro no topo do grid, para os campos apresentados, sendo que:
+		a.  as datas devem ser possíveis de serem filtradas por período
+		b. Valores podem ser filtrados por faixa, valor aproximado ou valor exato
+	c) O Status deve ser representado com ícones ou cores intuitivas, que representem o status
+	d) Popule dados fictícios para o grid, com base em esses tipos de documentos:
+		a. Energia: CPFL, Cemig, Energisa
+		b. Telefonia: Vivo, Claro, Tim
+		c. Locações
+		d. Serviços
+		e. Diversos
+	e) Deixe recursos de selecionar múltiplos registros para envio para aprovação, no topo do grid
+		a. Esses registros posteriormente terão uma automação ligada, que enviará para o responsável para aprovação
+	
+# Estilo de design:
+	a) Limpo, moderno e criativo
+	b) Utilize o logotipo do cliente, que vou te enviar  em formato .png
+	c) Utilize como paleta as cores do logotipo, e mais cores próximas, formando um degradê
+
+# geral
+Não alucine, e se atenha à essas orientações 
+
+
