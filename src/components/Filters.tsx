@@ -1,4 +1,4 @@
-import { Filter, Calendar, DollarSign, Search } from 'lucide-react';
+import { Filter, DollarSign, Search, X } from 'lucide-react';
 import type { Status } from '../types';
 import styles from './Filters.module.css';
 
@@ -15,6 +15,7 @@ interface FiltersProps {
     onMaxValueChange: (val: string) => void;
     onStatusChange: (val: Status | 'todos') => void;
     onSearchChange: (val: string) => void;
+    onClearFilters: () => void;
 }
 
 export function Filters({
@@ -29,7 +30,8 @@ export function Filters({
     onMinValueChange,
     onMaxValueChange,
     onStatusChange,
-    onSearchChange
+    onSearchChange,
+    onClearFilters
 }: FiltersProps) {
     return (
         <div className={styles.container}>
@@ -38,6 +40,10 @@ export function Filters({
                     <Filter size={20} />
                     <span>Filtros</span>
                 </div>
+                <button className={styles.clearButton} onClick={onClearFilters}>
+                    <X size={14} />
+                    Limpar filtros
+                </button>
             </div>
 
             <div className={styles.grid}>
@@ -60,20 +66,20 @@ export function Filters({
                     <label>Período</label>
                     <div className={styles.row}>
                         <div className={styles.inputWrapper}>
-                            <Calendar size={16} className={styles.icon} />
                             <input
                                 type="date"
                                 value={dateStart}
                                 onChange={(e) => onDateStartChange(e.target.value)}
+                                className={styles.dateInput}
                             />
                         </div>
                         <span className={styles.separator}>até</span>
                         <div className={styles.inputWrapper}>
-                            <Calendar size={16} className={styles.icon} />
                             <input
                                 type="date"
                                 value={dateEnd}
                                 onChange={(e) => onDateEndChange(e.target.value)}
+                                className={styles.dateInput}
                             />
                         </div>
                     </div>

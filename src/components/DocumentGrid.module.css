@@ -4,16 +4,21 @@
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     overflow: hidden;
-    /* For rounded corners */
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    display: flex;
+    flex-direction: column;
+}
+
+.tableWrapper {
     overflow-x: auto;
+    max-height: 600px;
+    /* Limit height for scrolling */
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
     min-width: 1000px;
-    /* Ensure horizontal scroll on small screens */
 }
 
 .table th,
@@ -24,13 +29,18 @@
 }
 
 .table th {
-    background: rgba(249, 250, 251, 0.8);
+    background: rgba(249, 250, 251, 0.95);
+    /* Higher opacity for sticky */
     font-weight: 600;
     font-size: 0.85rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .table tr:last-child td {
@@ -60,6 +70,12 @@
     cursor: pointer;
     accent-color: var(--color-secondary);
     border-radius: 4px;
+}
+
+.checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    filter: grayscale(1);
 }
 
 .badge {
@@ -132,4 +148,49 @@
     align-items: center;
     gap: 1rem;
     color: var(--text-muted);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem;
+    gap: 1rem;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.pageInfo {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.pageButtons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pageButton {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+
+.pageButton:not(:disabled):hover {
+    border-color: var(--color-secondary);
+    color: var(--color-secondary);
 }

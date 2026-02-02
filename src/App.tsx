@@ -4,8 +4,10 @@ import { getMockDocuments } from './data/mockData';
 import { Filters } from './components/Filters';
 import { DocumentGrid } from './components/DocumentGrid';
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { Send, FileText, Loader2, CheckCircle2 } from 'lucide-react';
+import { Send, Loader2, CheckCircle2 } from 'lucide-react';
 import './index.css';
+
+const ITEMS_PER_PAGE = 10;
 
 function App() {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
@@ -18,6 +20,7 @@ function App() {
   const [maxValue, setMaxValue] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'todos'>('todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -32,6 +35,11 @@ function App() {
       setLoading(false);
     });
   }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateStart, dateEnd, minValue, maxValue, statusFilter, searchTerm]);
 
   // Filter Logic
   const filteredDocuments = documents.filter(doc => {
@@ -61,10 +69,33 @@ function App() {
     }
 
     return true;
+  }).sort((a, b) => {
+    // Default Sort: Date Descending
+    return new Date(b.dataLancamento).getTime() - new Date(a.dataLancamento).getTime();
   });
 
+  // Pagination Logic
+  const paginatedDocuments = filteredDocuments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   // Handler functions
+  const handleClearFilters = () => {
+    setDateStart('');
+    setDateEnd('');
+    setMinValue('');
+    setMaxValue('');
+    setStatusFilter('todos');
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
   const handleToggleSelect = (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    // Safety check: only allow pending
+    if (!doc || doc.status !== 'pendente') return;
+
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -75,12 +106,23 @@ function App() {
   };
 
   const handleToggleSelectAll = () => {
-    if (selectedIds.size === filteredDocuments.length && filteredDocuments.length > 0) {
-      setSelectedIds(new Set());
+    // Logic: Toggle selection for ONLY pending documents CURRENTLY visible (paginated or filtered list? usually visible list for intuitively)
+    // Actually, usually "Select All" applies to the view. Let's apply to filtered set but only pending ones.
+    const pendingInView = filteredDocuments.filter(d => d.status === 'pendente');
+
+    if (pendingInView.length === 0) return;
+
+    const allPendingSelected = pendingInView.every(d => selectedIds.has(d.id));
+
+    const newSelected = new Set(selectedIds);
+    if (allPendingSelected) {
+      // Unselect all pending in filtered view
+      pendingInView.forEach(d => newSelected.delete(d.id));
     } else {
-      const allIds = new Set(filteredDocuments.map(d => d.id));
-      setSelectedIds(allIds);
+      // Select all pending in filtered view
+      pendingInView.forEach(d => newSelected.add(d.id));
     }
+    setSelectedIds(newSelected);
   };
 
   const handleSendForApproval = () => {
@@ -89,10 +131,7 @@ function App() {
     setTimeout(() => {
       setIsSending(false);
       setShowSuccessToast(true);
-      // Optional: Clear selection after send
       setSelectedIds(new Set());
-
-      // Auto hide toast
       setTimeout(() => setShowSuccessToast(false), 3000);
     }, 1500);
   };
@@ -102,23 +141,31 @@ function App() {
 
       {/* Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Logo Placeholder - User provided PNG, assuming it would be placed here or used via CSS. Using text/gradient for now as per instructions to use palette */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          {/* Logo */}
           <div style={{
-            width: '48px',
-            height: '48px',
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+            background: 'white',
             borderRadius: '12px',
+            padding: '0.5rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            boxShadow: '0 4px 6px -1px rgba(122, 31, 93, 0.3)'
+            alignItems: 'center'
           }}>
-            <FileText size={24} />
+            <img
+              src="/aperam-logo.png"
+              alt="Aperam"
+              style={{ height: '42px', width: 'auto', display: 'block' }}
+              onError={(e) => {
+                // Fallback if image fails
+                (e.target as HTMLImageElement).style.display = 'none';
+                ((e.target as HTMLImageElement).nextSibling as HTMLElement).style.display = 'block';
+              }}
+            />
+            <div style={{ display: 'none', fontWeight: 'bold', color: 'var(--color-primary)', padding: '0 1rem' }}>APERAM</div>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-primary)' }}>Controle de Documentos</h1>
+
+          <div style={{ borderLeft: '1px solid rgba(0,0,0,0.1)', paddingLeft: '1.5rem', height: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-primary)', lineHeight: '1.2' }}>Controle de Documentos</h1>
             <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Middleware de Pré-lançamento SAP</p>
           </div>
         </div>
@@ -131,23 +178,34 @@ function App() {
             background: 'linear-gradient(135deg, var(--color-secondary), var(--color-accent))',
             border: 'none',
             color: 'white',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
+            padding: '0.75rem 1.75rem',
+            borderRadius: '10px',
             fontWeight: '600',
+            fontSize: '0.95rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            boxShadow: '0 4px 12px rgba(240, 125, 62, 0.25)',
-            opacity: selectedIds.size === 0 ? 0.5 : 1,
+            gap: '0.6rem',
+            boxShadow: '0 8px 16px -4px rgba(240, 125, 62, 0.3)',
+            opacity: selectedIds.size === 0 ? 0.6 : 1,
             cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer',
-            transition: 'transform 0.1s'
+            transition: 'all 0.2s',
+            transform: selectedIds.size > 0 ? 'translateY(0)' : 'none'
           }}
-          onMouseDown={e => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'scale(0.97)')}
-          onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          onMouseDown={e => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'translateY(1px)')}
+          onMouseUp={e => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'translateY(0)')}
         >
           {isSending ? <Loader2 className="spin" size={20} /> : <Send size={20} />}
-          {isSending ? 'Enviando...' : `Enviar para Aprovação (${selectedIds.size})`}
+          <span>{isSending ? 'Enviando...' : 'Enviar para Aprovação'}</span>
+          {selectedIds.size > 0 && (
+            <span style={{
+              background: 'rgba(255,255,255,0.2)',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '0.85rem'
+            }}>
+              {selectedIds.size}
+            </span>
+          )}
         </button>
       </header>
 
@@ -166,18 +224,23 @@ function App() {
           onMaxValueChange={setMaxValue}
           onStatusChange={setStatusFilter}
           onSearchChange={setSearchTerm}
+          onClearFilters={handleClearFilters}
         />
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem', color: 'var(--color-primary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '6rem', color: 'var(--color-primary)' }}>
             <Loader2 className="spin" size={48} />
           </div>
         ) : (
           <DocumentGrid
-            documents={filteredDocuments}
+            documents={paginatedDocuments}
             selectedIds={selectedIds}
             onToggleSelect={handleToggleSelect}
             onToggleSelectAll={handleToggleSelectAll}
+            totalItems={filteredDocuments.length}
+            currentPage={currentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
           />
         )}
       </main>
@@ -191,17 +254,20 @@ function App() {
           background: 'white',
           padding: '1rem 1.5rem',
           borderRadius: '12px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
-          borderLeft: '4px solid #22c55e',
-          animation: 'slideIn 0.3s ease-out'
+          gap: '1rem',
+          borderLeft: '6px solid #22c55e',
+          animation: 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 100
         }}>
-          <CheckCircle2 color="#22c55e" size={24} />
+          <div style={{ background: '#dcfce7', padding: '8px', borderRadius: '50%' }}>
+            <CheckCircle2 color="#166534" size={24} />
+          </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Sucesso!</h4>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Documentos enviados para aprovação.</p>
+            <h4 style={{ margin: '0 0 2px 0', fontSize: '1rem', color: '#14532d' }}>Sucesso!</h4>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534' }}>Documentos enviados para aprovação.</p>
           </div>
         </div>
       )}
@@ -216,7 +282,7 @@ function App() {
           animation: spin 1s linear infinite;
         }
         @keyframes slideIn {
-          from { transform: translateY(20px); opacity: 0; }
+          from { transform: translateY(100%); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
